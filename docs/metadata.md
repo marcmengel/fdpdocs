@@ -68,7 +68,7 @@ See more details in the [MetaCat documentation](https://fermitools.github.io/met
 
 1. Generating metadata in MetaCat format
 
-    [This script](https://github.com/FNAL-SCD/fdpdocs/examples/generate_metadata.py) generates metadata for files in a given directory in the format required by MetaCat.
+    [This script](https://github.com/FNAL-SCD/fdpdocs/blob/main/examples/declare_to_metacat.py) generates metadata for files in a given directory in the format required by MetaCat.
 
         python generate_metadata.py --data-directory /path/to/dataset --extension .h5 --namespace my_namespace --outfile metadata.json
 
@@ -78,7 +78,7 @@ See more details in the [MetaCat documentation](https://fermitools.github.io/met
 
 1. Declaring metadata to MetaCat and adding it to a dataset. Also creates a namespace and dataset if they do not already exist.
 
-    [This script](https://github.com/FNAL-SCD/fdpdocs/examples/declare_to_metacat.py) declares files to MetaCat.
+    [This script](https://github.com/FNAL-SCD/fdpdocs/blob/main/examples/declare_to_metacat.py) declares files to MetaCat.
 
         python declare_to_metacat.py --dataset my_dataset --namespace my_namespace --metadatafile metadata.json
 
