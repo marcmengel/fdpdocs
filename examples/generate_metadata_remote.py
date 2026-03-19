@@ -174,11 +174,11 @@ class InfoGetter:
 def main():
     level = logging.INFO
     parser = argparse.ArgumentParser()
-    parser.add_argument("-d", "--debug", action="store_true", default=False)
+    parser.add_argument("-d", "--data-directory", action="append", default=[])
     parser.add_argument("-s", "--dataset",  default="")
     parser.add_argument("-n", "--namespace",  default="amsc")
     parser.add_argument("-o", "--outfile", default=None)
-    parser.add_argument("directory_url", default=[], nargs="+")
+    parser.add_argument("--debug", default=False)
 
     args = parser.parse_args()
 
@@ -195,7 +195,7 @@ def main():
 
     ig = InfoGetter(namespace=args.namespace, dataset=args.dataset)
 
-    for basedir in args.directory_url:
+    for basedir in args.data_directory:
         ig.get_files(basedir.strip("/"))
 
     ig.generate(outfile)
