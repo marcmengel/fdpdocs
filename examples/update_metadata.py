@@ -23,15 +23,11 @@ def metacat_update_file(namespace, filename, metadata):
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
-    #parser.add_argument("--dataset", "-d", required=True, help="MetaCat dataset where metadata will be added")
-    #parser.add_argument("--namespace", "-n", required=True, help="MetaCat namespace where metadata will be added")
     parser.add_argument("--inputfile", "-i", required=True, help="Name of the json file that contains the updated metadata")
     args = parser.parse_args()
 
     logging.basicConfig(format='%(asctime)s %(levelname)s %(message)s', level=logging.INFO)
 
-    #namespace = args.namespace
-    #dataset = args.dataset
     inputfile = args.inputfile
 
     with open(inputfile, "r") as f:
