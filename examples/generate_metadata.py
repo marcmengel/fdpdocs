@@ -17,35 +17,47 @@ def checksum(filepath):
     return hash_func.hexdigest()
 
 # Generate metadata in metacat format
-def generate_metadata(namespace, filename, directory):
+def generate_metadata(namespace, dsname, filename, directory):
     # basic file metadata required for metacat
     filepath = os.path.join(directory, filename)
     filesize = os.path.getsize(filepath)
     chksm = checksum(filepath)
     checksum_dict = {"sha256": chksm}
 
+    # file metadata required for amsc
+    description = f"This is a file from the {dsname} dataset"
     # add list of locations where file can be accessed
     webdav_url = "https://amsc.fnal.gov:2880"+filepath
     xrootd_url = "root://amsc.fnal.gov"+filepath
     file_locations = [webdav_url, xrootd_url]
 
-    # return the metadata dictionary
-    return {
+    # create the metadata dictionary
+    md = {
         "namespace": namespace,
         "name": filename,
         "size": filesize,
         "checksums": checksum_dict,
         "metadata" : {
+            "AmSC.common.type" : "artifact",
+            "AmSC.common.description" : description,
+            "AmSC.common.location" : webdav_url,
+
+            # insert your own metadata here
+
             "fn.path" : filepath,
-            "fn.location" : file_locations
+            "fn.locations" : file_locations
         }
     }
+
+    # return the metadata dictionary
+    return md
         
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument("--data-directory", "-d", required=True, help="Directory containing data files that need metadata generated (required)")
     parser.add_argument("--extension", "-e", help="Extension of data files that need metadata generated. If not provided, all files in data-directory are used.")
     parser.add_argument("--namespace", "-n", required=True, help="MetaCat namespace where metadata will be added (required)")
+    parser.add_argument("--dataset", "-s", required=True, help="Name of the MetaCat dataset where metadata will be added (required)")
     parser.add_argument("--outfile", "-o", help="Name of the json file to contain the generated metadata. If not provided, it will be written to data-directory/metadata/metadata.json")
     args = parser.parse_args()
 
@@ -54,6 +66,7 @@ if __name__ == '__main__':
     directory = args.data_directory
     extension = args.extension
     namespace = args.namespace
+    dsname = args.dataset
     outfile = args.outfile
     
     # handle input arguments
@@ -78,7 +91,7 @@ if __name__ == '__main__':
     md = []
     for file in files:
         filename = os.path.basename(file)
-        file_metadata = generate_metadata(namespace, filename, directory)
+        file_metadata = generate_metadata(namespace, dsname, filename, directory)
         md.append(file_metadata)
 
     # write the metadata to json file
