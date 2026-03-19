@@ -91,7 +91,7 @@ For now only the above fields are used by the central AmSC data catalog. If you 
 1. Generating metadata in MetaCat format
 
     [This script](https://github.com/FNAL-SCD/fdpdocs/blob/main/examples/generate_metadata.py) generates metadata for files in a local directory in the format required by MetaCat, while
-    [this one](https://github.com/FNAL-SCD/fdpdocs/blob/main/examples/generate_remote_metadata.py) generates metadata for files already uploaded to amsc.fnal.gov DCache.
+    [this one](https://github.com/FNAL-SCD/fdpdocs/blob/main/examples/generate_metadata_remote.py) generates metadata for files already uploaded to amsc.fnal.gov DCache.
 
     It takes a directory where the data files are located and extracts information such as the name, size, and checksum of each file. It also includes the metadata fields required by the central AmSC catalog. You can modify the script to add extra metadata fields as desired. The output is a json file that can be used to declare the files to MetaCat. The usage is as follows:
 
