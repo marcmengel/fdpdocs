@@ -119,7 +119,7 @@ class InfoGetter:
          if pos > 0:
               suffix = fname[pos+1:]
               if suffix == "gz":
-                  return True, get_suffix(fname[:pos])[1]
+                  return True, self.get_suffix(fname[:pos])[1]
               return False, suffix
          return False, ""
 
