@@ -39,8 +39,8 @@ class InfoGetter:
                 uid = os.environ.get("ID", str(os.geteuid()))
                 token_dir = os.environ.get("XDG_RUNTIME_DIR", "/tmp")
                 token_file = token_dir + "/" + "bt_u" + uid
-        logger.debug(f"reading token file: {token_file}")
-        token = open(token_file, "r").read().strip()
+            logger.debug(f"reading token file: {token_file}")
+            token = open(token_file, "r").read().strip()
         return token
 
     def get_files( self, basedir, nsd=0):
