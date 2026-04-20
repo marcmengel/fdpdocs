@@ -4,6 +4,8 @@ import xml.parsers.expat
 import re
 import os
 import sys
+import json
+from urllib.parse import urlparse
 
 import urllib3
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
@@ -148,6 +150,13 @@ class InfoGetter:
              mimetype = f"application/X-{suffix}"
          return mimetype
 
+    def get_globus_uuid(self):
+        if self.namespace=="dune":
+            uuid = "5ba77b68-8077-454f-b126-2c5567645e88"
+        else:
+            uuid = "b35955d3-14d1-4aab-a1c9-189989f7d8d0"
+        return uuid
+
     def generate(self, outfile):
         ''' generate the metadata for the scanned directories '''
 
@@ -160,7 +169,15 @@ class InfoGetter:
         for finfo in self.file_checksum_list:
             gz, suffix = self.get_suffix(finfo[0])
             mimetype = self.get_mimetype(suffix)
-                
+
+            filepath = urlparse(finfo[3]).path+"/"+finfo[0]
+            webdav_url = f"{finfo[3]}/{finfo[0]}"
+            xrootd_url = f"root://amsc.fnal.gov{filepath}"
+            uuid = self.get_globus_uuid()
+            globus_loc = f"globus://{uuid}{filepath}"
+            file_locations = [webdav_url, xrootd_url, globus_loc]
+            print(filepath, file_locations)
+ 
             print(f"""{sep}
         {{
             "name": "{finfo[0]}",
@@ -174,7 +191,8 @@ class InfoGetter:
                 "AmSC.common.display_name": "{finfo[0]}",
                 "AmSC.common.tags": "",
                 "AmSC.common.version": "",
-                "AmSC.artifact.format": "{mimetype}"
+                "AmSC.artifact.format": "{mimetype}",
+                "fn.locations": {json.dumps(file_locations)}
             }}
         }}""", end="", file=outfile)
 
@@ -182,7 +200,7 @@ class InfoGetter:
 
         if self.file_checksum_list:
             print("\n]", file=outfile)
- 
+
 def main():
     level = logging.INFO
     parser = argparse.ArgumentParser()
