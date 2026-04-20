@@ -38,6 +38,8 @@ The IDs of the other collections can be found either from globus.org (click the 
 
     globus endpoint search "fermi data platform"
 
+Instructions for using the AmSC data movement API to transfer files via Globus can be found [here] (https://github.com/FNAL-SCD/fdpdocs/blob/main/docs/using_amsc_data_movement_api.md)
+
 ## Https/WebDAV
 
 ### Download public data using browser
