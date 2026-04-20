@@ -16,25 +16,29 @@ requires authentication and authorization.
 To allow authorized access to the data  FDP utilizes OpenID Connect (OIDC) authentication
 protocol within overall authorization flow  implemented using Oauth2 authorization framework. 
 
-## Globus 
+<!-- add link to documentation on getting added to amsc vo once it exists -->
 
-To access the data, the user needs to be mapped to an account on the server. This is currently a manual process done on a case-by-case basis. 
+## Globus 
 
 ### From globus.org
 
 https://www.globus.org/ 
 
-Log in with Fermilab credentials 
+Log in with Fermilab credentials.
 
-Search for the “Fermi Data Platform” collection 
-
-The data is under the `/amsc` directory 
+Search for “Fermi Data Platform” in the collection search bar. There are several collections associated with FDP. The "Fermi Data Platform" collection allows read access to all publicly available data. The other collections allow read and write access to the corresponding group, given the user has existing access to that group.
 
 ### From the command line: 
 
     globus transfer [source-endpoint-ID]:[/path/to/source] [destination-ID]:[/path/to/destination] 
 
-The Fermi Data Platform endpoint ID is `b35955d3-14d1-4aab-a1c9-189989f7d8d0` and the path is `/amsc` 
+The Fermi Data Platform (read-only) endpoint ID is `b35955d3-14d1-4aab-a1c9-189989f7d8d0` and the path is `/amsc/public` 
+
+The IDs of the other collections can be found either from globus.org (click the ... to view collection details), or from the following globus command
+
+    globus endpoint search "fermi data platform"
+
+Instructions for using the AmSC data movement API to transfer files via Globus can be found [here] (https://github.com/FNAL-SCD/fdpdocs/blob/main/docs/using_amsc_data_movement_api.md)
 
 ## Https/WebDAV
 
