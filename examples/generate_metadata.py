@@ -26,6 +26,14 @@ def checksum(filepath):
             adler = zlib.adler32(chunk, adler)
     return f"{adler:08x}"
 
+# Look up the uuid of the corresponding globus collection to add to the globus location
+def globus_uuid(namespace):
+    if namespace=="dune":
+        uuid = "5ba77b68-8077-454f-b126-2c5567645e88"
+    else:
+        uuid = "b35955d3-14d1-4aab-a1c9-189989f7d8d0"
+    return uuid
+
 # Generate metadata in metacat format
 def generate_metadata(namespace, dsname, filename, directory):
     # basic file metadata required for metacat
@@ -34,12 +42,16 @@ def generate_metadata(namespace, dsname, filename, directory):
     chksm = checksum(filepath)
     checksum_dict = {"adler32": chksm}
 
+    # globus collection uuid
+    uuid = globus_uuid(namespace)
+
     # file metadata required for amsc
     description = f"This is a file from the {dsname} dataset"
     # add list of locations where file can be accessed
     webdav_url = "https://amsc.fnal.gov:2880"+filepath
     xrootd_url = "root://amsc.fnal.gov"+filepath
-    file_locations = [webdav_url, xrootd_url]
+    globus_loc = f"globus://{uuid}"+filepath
+    file_locations = [webdav_url, xrootd_url, globus_loc]
 
     # create the metadata dictionary
     md = {
