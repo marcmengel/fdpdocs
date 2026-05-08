@@ -4,12 +4,24 @@ import xml.parsers.expat
 import re
 import os
 import sys
+import json
+from urllib.parse import urlparse
 
 import urllib3
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
 import logging
 logger = logging.getLogger(__name__)
+
+def nsubdirs(n, path):
+    rl = []
+    for i in range(n):
+        path = os.path.dirname(path)
+        rl.insert(0,os.path.basename(path))
+    if rl:
+        return "/".join(rl) + "/"
+    else:
+        return ""
 
 class InfoGetter:
     def __init__(self, namespace="amsc", dataset=None):
@@ -33,7 +45,7 @@ class InfoGetter:
         token = open(token_file, "r").read().strip()
         return token
 
-    def get_files( self, basedir):
+    def get_files( self, basedir, nsd=0):
         logger.debug(f"get_files: {basedir=}")
         headers = self.token_header.copy()
         headers["Depth"] = "1"
@@ -48,6 +60,8 @@ class InfoGetter:
         curname = None
         filename = None
         size = None
+
+        subdir = nsubdirs(nsd, basedir + "/x")
 
         def start_element(name, attrs):
             nonlocal curname, filename, size
@@ -95,7 +109,7 @@ class InfoGetter:
                     cstype = data["checksums"][0]["type"].lower()
                     checksums = f'{{ "{cstype}": "{csvalue}" }}'
 
-            self.file_checksum_list.append( (filename, size, checksums, basedir))
+            self.file_checksum_list.append( (subdir + filename, size, checksums, basedir))
         logger.debug(f"after checksums: {self.file_checksum_list=}")
 
     def get_file_list(self):
@@ -107,7 +121,7 @@ class InfoGetter:
          if pos > 0:
               suffix = fname[pos+1:]
               if suffix == "gz":
-                  return True, get_suffix(fname[:pos])[1]
+                  return True, self.get_suffix(fname[:pos])[1]
               return False, suffix
          return False, ""
 
@@ -136,6 +150,13 @@ class InfoGetter:
              mimetype = f"application/X-{suffix}"
          return mimetype
 
+    def get_globus_uuid(self):
+        if self.namespace=="dune":
+            uuid = "5ba77b68-8077-454f-b126-2c5567645e88"
+        else:
+            uuid = "b35955d3-14d1-4aab-a1c9-189989f7d8d0"
+        return uuid
+
     def generate(self, outfile):
         ''' generate the metadata for the scanned directories '''
 
@@ -148,7 +169,15 @@ class InfoGetter:
         for finfo in self.file_checksum_list:
             gz, suffix = self.get_suffix(finfo[0])
             mimetype = self.get_mimetype(suffix)
-                
+
+            filepath = urlparse(finfo[3]).path+"/"+finfo[0]
+            webdav_url = f"{finfo[3]}/{finfo[0]}"
+            xrootd_url = f"root://amsc.fnal.gov{filepath}"
+            uuid = self.get_globus_uuid()
+            globus_loc = f"globus://{uuid}{filepath}"
+            file_locations = [webdav_url, xrootd_url, globus_loc]
+            print(filepath, file_locations)
+ 
             print(f"""{sep}
         {{
             "name": "{finfo[0]}",
@@ -156,12 +185,14 @@ class InfoGetter:
             "size": {finfo[1]},
             "checksums": {finfo[2]},
             "metadata": {{
+                "AmSC.common.type": "artifact",
                 "AmSC.common.description": "File {finfo[0]}{dataset_txt} in {finfo[3]}",
-                "AmSC.common.display_name": "{finfo[0]}",
                 "AmSC.common.location": "{finfo[3]}/{finfo[0]}",
+                "AmSC.common.display_name": "{finfo[0]}",
                 "AmSC.common.tags": "",
                 "AmSC.common.version": "",
-                "AmSC.artifact.format": "{mimetype}"
+                "AmSC.artifact.format": "{mimetype}",
+                "fn.locations": {json.dumps(file_locations)}
             }}
         }}""", end="", file=outfile)
 
@@ -170,7 +201,6 @@ class InfoGetter:
         if self.file_checksum_list:
             print("\n]", file=outfile)
 
- 
 def main():
     level = logging.INFO
     parser = argparse.ArgumentParser()
@@ -179,6 +209,7 @@ def main():
     parser.add_argument("-n", "--namespace",  default="amsc")
     parser.add_argument("-o", "--outfile", default=None)
     parser.add_argument("--debug", default=False)
+    parser.add_argument("--nsubdirs", "-N", help="Number of subdirectories to include in name for uniqueness", type=int, default=0)
 
     args = parser.parse_args()
 
@@ -196,7 +227,7 @@ def main():
     ig = InfoGetter(namespace=args.namespace, dataset=args.dataset)
 
     for basedir in args.data_directory:
-        ig.get_files(basedir.strip("/"))
+        ig.get_files(basedir.strip("/"), nsd = args.nsubdirs)
 
     ig.generate(outfile)
 

@@ -2,39 +2,61 @@ import json
 import logging
 import argparse
 import os
-import hashlib
+import zlib
 import glob
 
 # Initialize logger
 logger = logging.getLogger(__name__)
 
+def nsubdirs(n, path):
+    rl = []
+    for i in range(n):
+        path = os.path.dirname(path)
+        rl.insert(0,os.path.basename(path))
+    if rl:
+        return "/".join(rl) + "/"
+    else:
+        return ""
+
 # Generate file checksum
 def checksum(filepath):
-    hash_func = hashlib.sha256()
+    adler = 1
     with open(filepath, "rb") as f:
         for chunk in iter(lambda: f.read(4096), b""):
-            hash_func.update(chunk)
-    return hash_func.hexdigest()
+            adler = zlib.adler32(chunk, adler)
+    return f"{adler:08x}"
+
+# Look up the uuid of the corresponding globus collection to add to the globus location
+def globus_uuid(namespace):
+    if namespace=="dune":
+        uuid = "5ba77b68-8077-454f-b126-2c5567645e88"
+    else:
+        uuid = "b35955d3-14d1-4aab-a1c9-189989f7d8d0"
+    return uuid
 
 # Generate metadata in metacat format
 def generate_metadata(namespace, dsname, filename, directory):
     # basic file metadata required for metacat
-    filepath = os.path.join(directory, filename)
+    filepath = os.path.join(directory, os.path.basename(filename))
     filesize = os.path.getsize(filepath)
     chksm = checksum(filepath)
-    checksum_dict = {"sha256": chksm}
+    checksum_dict = {"adler32": chksm}
+
+    # globus collection uuid
+    uuid = globus_uuid(namespace)
 
     # file metadata required for amsc
     description = f"This is a file from the {dsname} dataset"
     # add list of locations where file can be accessed
     webdav_url = "https://amsc.fnal.gov:2880"+filepath
     xrootd_url = "root://amsc.fnal.gov"+filepath
-    file_locations = [webdav_url, xrootd_url]
+    globus_loc = f"globus://{uuid}"+filepath
+    file_locations = [webdav_url, xrootd_url, globus_loc]
 
     # create the metadata dictionary
     md = {
-        "namespace": namespace,
         "name": filename,
+        "namespace": namespace,
         "size": filesize,
         "checksums": checksum_dict,
         "metadata" : {
@@ -59,6 +81,7 @@ if __name__ == '__main__':
     parser.add_argument("--namespace", "-n", required=True, help="MetaCat namespace where metadata will be added (required)")
     parser.add_argument("--dataset", "-s", required=True, help="Name of the MetaCat dataset where metadata will be added (required)")
     parser.add_argument("--outfile", "-o", help="Name of the json file to contain the generated metadata. If not provided, it will be written to data-directory/metadata/metadata.json")
+    parser.add_argument("--nsubdirs", "-N", help="Number of subdirectories to include in name for uniqueness", type=int, default=0)
     args = parser.parse_args()
 
     logging.basicConfig(format='%(asctime)s %(levelname)s %(message)s', level=logging.INFO)
@@ -90,8 +113,11 @@ if __name__ == '__main__':
 
     md = []
     for file in files:
-        filename = os.path.basename(file)
-        file_metadata = generate_metadata(namespace, dsname, filename, directory)
+        filename = nsubdirs(args.nsubdirs, file ) + os.path.basename(file)
+        try:
+            file_metadata = generate_metadata(namespace, dsname, filename, directory)
+        except IsADirectoryError:
+            continue
         md.append(file_metadata)
 
     # write the metadata to json file
